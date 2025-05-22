@@ -65,7 +65,7 @@ BEGIN
 	FOREACH search_word IN ARRAY string_to_array(search_text, ' ')
 	LOOP
 		SELECT
-			array_agg(word ORDER BY similarity (word, search_word) DESC) INTO similar_words
+			array_agg(word) INTO similar_words
 		FROM (
 			SELECT
 				word
@@ -73,6 +73,7 @@ BEGIN
 				movie_word
 			WHERE
 				word % search_word -- Fuzzy match (%) using pg_trgm, essentially find words that are similar to each search word
+			ORDER BY similarity (word, search_word) DESC
 			LIMIT case when index = 0 then 3 else 6 end -- You will probably need to tweak this for your use case.  I found that 6 alternates is fine if you have 2 or more words in the query but for single word queries, this gets a little whacky so I dialled it down to 3 alternates.  I couldn't figure out how to make the terms in the OR list to have different weights, obviously the original word should be the preferred match and ideally would bump the rank somehow..
 ) AS subquery;
 		similar_words := array_prepend(search_word, similar_words);
